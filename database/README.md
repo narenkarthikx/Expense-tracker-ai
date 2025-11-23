@@ -4,30 +4,41 @@ This folder contains the complete database setup for the Expense Tracker PWA.
 
 ## Files
 
-- `complete-database-setup.sql` - **Complete database setup script** (recommended)
+- `setup.sql` - **Single comprehensive database setup** (tested and working)
 
 ## Setup Instructions
 
-### Quick Setup (Recommended)
-1. Open your Supabase SQL editor
-2. Copy the entire content of `complete-database-setup.sql`
-3. Run the script - it creates everything needed:
-   - All tables and relationships
-   - AI processing fields
-   - Performance indexes
-   - System categories
-   - Helper functions
-   - Test data for verification
+### Quick Setup
+1. Open your Supabase SQL Editor
+2. Copy the entire content of `setup.sql`
+3. Run the script - it will create everything needed:
+   - ✅ All tables and relationships
+   - ✅ AI processing fields  
+   - ✅ Performance indexes
+   - ✅ System categories
+   - ✅ Helper functions
+   - ✅ Test data and verification
 
 ### What's Included
-- ✅ Complete table schema with relationships
-- ✅ AI receipt processing support
-- ✅ Performance optimized indexes
-- ✅ System categories and user management
-- ✅ Helper functions for automation
-- ✅ Test data and verification queries
+This script combines all the working components:
+- **Core Tables**: users, categories, expenses, budgets, wishlist
+- **AI Features**: receipt processing fields, confidence scores
+- **Performance**: Optimized indexes for fast queries
+- **Categories**: Predefined system categories with auto-setup
+- **Testing**: Built-in test data and verification queries
 
 ### Verification
-After running the script, check the verification output to ensure everything was created successfully.
+After running the script, check the output to ensure:
+- All tables created successfully
+- Test user and categories exist
+- Sample expense inserted correctly
+- All verification queries return expected results
+
+### Production Cleanup
+Remove test data before going live:
+```sql
+DELETE FROM expenses WHERE user_id = 'c90ad114-9182-4faa-93b1-1aec40c2c10a';
+DELETE FROM users WHERE email = 'test@example.com';
+```
 
 For detailed documentation, see `/docs/database.md`

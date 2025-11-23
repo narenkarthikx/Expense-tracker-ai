@@ -1,27 +1,23 @@
 -- ===================================================
--- EXPENSE TRACKER PWA - COMPLETE DATABASE SETUP
+-- EXPENSE TRACKER PWA - WORKING DATABASE SETUP
 -- ===================================================
--- This file contains the complete database schema and setup
--- for the Expense Tracker PWA with AI-powered receipt processing
+-- This file contains the TESTED and WORKING database setup
+-- based on the scripts that have been verified to work correctly
 -- 
--- Requirements:
--- - PostgreSQL 12 or higher
--- - Supabase (recommended) or standalone PostgreSQL
---
 -- Instructions:
--- 1. Run this entire script in your database
--- 2. All tables, functions, and data will be created
--- 3. The database will be ready for production use
+-- 1. Run this entire script in your Supabase SQL Editor
+-- 2. All tables and enhancements will be created
+-- 3. Test data will be inserted for verification
 -- ===================================================
 
--- STEP 1: Enable required extensions
+-- STEP 1: Enable UUID extension (REQUIRED)
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ===================================================
--- TABLE DEFINITIONS
+-- CORE TABLE CREATION
 -- ===================================================
 
--- Users table - Store user information
+-- Users table
 CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   email VARCHAR(255) UNIQUE NOT NULL,
@@ -30,40 +26,25 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- System categories lookup table (predefined categories)
-CREATE TABLE IF NOT EXISTS system_categories (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name VARCHAR(100) NOT NULL UNIQUE,
-  color VARCHAR(7) DEFAULT '#3b82f6',
-  icon VARCHAR(50) DEFAULT 'folder',
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
--- User categories table (user-specific categories)
+-- Categories table
 CREATE TABLE IF NOT EXISTS categories (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name VARCHAR(100) NOT NULL,
   color VARCHAR(7),
   icon VARCHAR(50),
-  is_system BOOLEAN DEFAULT false,
   created_at TIMESTAMP DEFAULT NOW()
 );
 
--- Expenses table with AI processing support
+-- Expenses table (basic structure)
 CREATE TABLE IF NOT EXISTS expenses (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   category_id UUID REFERENCES categories(id),
-  category VARCHAR(100), -- Backward compatibility
   amount DECIMAL(10, 2) NOT NULL,
   description VARCHAR(500),
   receipt_url VARCHAR(500),
-  extracted_data JSONB, -- AI-extracted receipt data
-  ai_confidence DECIMAL(3, 2), -- AI confidence score (0.00-1.00)
-  processing_status VARCHAR(50) DEFAULT 'completed', -- 'processing', 'completed', 'failed'
-  merchant VARCHAR(255), -- Merchant/store name
-  payment_method VARCHAR(100), -- Cash, card, etc.
+  extracted_data JSONB,
   date DATE NOT NULL,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
@@ -92,24 +73,43 @@ CREATE TABLE IF NOT EXISTS wishlist (
 );
 
 -- ===================================================
--- INDEXES FOR PERFORMANCE
+-- PERFORMANCE INDEXES
 -- ===================================================
 
--- Primary indexes
+-- Basic performance indexes
 CREATE INDEX IF NOT EXISTS idx_expenses_user_id ON expenses(user_id);
 CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date);
 CREATE INDEX IF NOT EXISTS idx_budgets_user_id ON budgets(user_id);
 CREATE INDEX IF NOT EXISTS idx_categories_user_id ON categories(user_id);
 CREATE INDEX IF NOT EXISTS idx_wishlist_user_id ON wishlist(user_id);
 
--- AI processing indexes
-CREATE INDEX IF NOT EXISTS idx_expenses_merchant ON expenses(merchant);
-CREATE INDEX IF NOT EXISTS idx_expenses_processing_status ON expenses(processing_status);
-CREATE INDEX IF NOT EXISTS idx_categories_system ON categories(is_system);
+-- ===================================================
+-- AI ENHANCEMENTS (TESTED AND WORKING)
+-- ===================================================
 
--- Category lookup indexes
-CREATE INDEX IF NOT EXISTS idx_expenses_category_id ON expenses(category_id);
-CREATE INDEX IF NOT EXISTS idx_budgets_category_id ON budgets(category_id);
+-- Add AI processing fields to expenses table
+ALTER TABLE expenses 
+ADD COLUMN IF NOT EXISTS ai_confidence DECIMAL(3, 2),
+ADD COLUMN IF NOT EXISTS processing_status VARCHAR(50) DEFAULT 'completed',
+ADD COLUMN IF NOT EXISTS merchant VARCHAR(255),
+ADD COLUMN IF NOT EXISTS payment_method VARCHAR(100);
+
+-- Add backward compatibility column
+ALTER TABLE expenses 
+ADD COLUMN IF NOT EXISTS category VARCHAR(100) DEFAULT 'Other';
+
+-- Add system flag to categories
+ALTER TABLE categories 
+ADD COLUMN IF NOT EXISTS is_system BOOLEAN DEFAULT false;
+
+-- Create system categories lookup table
+CREATE TABLE IF NOT EXISTS system_categories (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name VARCHAR(100) NOT NULL UNIQUE,
+  color VARCHAR(7) DEFAULT '#3b82f6',
+  icon VARCHAR(50) DEFAULT 'folder',
+  created_at TIMESTAMP DEFAULT NOW()
+);
 
 -- ===================================================
 -- SYSTEM DATA
@@ -130,7 +130,7 @@ INSERT INTO system_categories (name, color, icon) VALUES
 ON CONFLICT (name) DO NOTHING;
 
 -- ===================================================
--- HELPER FUNCTIONS
+-- HELPER FUNCTIONS (WORKING)
 -- ===================================================
 
 -- Function to create user categories from system categories
@@ -149,61 +149,65 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Function to get or create user
-CREATE OR REPLACE FUNCTION get_or_create_user(
-  p_user_id UUID,
-  p_email VARCHAR(255),
-  p_name VARCHAR(255) DEFAULT 'User'
-)
-RETURNS UUID AS $$
-BEGIN
-  -- Try to insert the user
-  INSERT INTO users (id, email, name, created_at, updated_at) 
-  VALUES (p_user_id, p_email, p_name, NOW(), NOW())
-  ON CONFLICT (id) DO UPDATE SET
-    email = EXCLUDED.email,
-    name = EXCLUDED.name,
-    updated_at = EXCLUDED.updated_at;
-  
-  -- Create user categories if they don't exist
-  PERFORM create_user_categories(p_user_id);
-  
-  RETURN p_user_id;
-END;
-$$ LANGUAGE plpgsql;
-
 -- ===================================================
--- TESTING AND VERIFICATION
+-- AI PROCESSING INDEXES
 -- ===================================================
 
--- Create test user for verification
-DO $$
-DECLARE
-    test_user_id UUID := 'c90ad114-9182-4faa-93b1-1aec40c2c10a';
-BEGIN
-    PERFORM get_or_create_user(
-        test_user_id,
-        'test@example.com',
-        'Test User'
-    );
-    
-    -- Insert test expense
-    INSERT INTO expenses (user_id, amount, description, category, date, created_at) 
-    VALUES (
-        test_user_id,
-        15.99,
-        'Database Setup Test',
-        'Other',
-        CURRENT_DATE,
-        NOW()
-    ) ON CONFLICT DO NOTHING;
-END $$;
+-- Additional indexes for AI features
+CREATE INDEX IF NOT EXISTS idx_expenses_merchant ON expenses(merchant);
+CREATE INDEX IF NOT EXISTS idx_expenses_processing_status ON expenses(processing_status);
+CREATE INDEX IF NOT EXISTS idx_categories_system ON categories(is_system);
+
+-- ===================================================
+-- TEST DATA AND VERIFICATION
+-- ===================================================
+
+-- Create test user with all required fields
+INSERT INTO users (id, email, name, created_at, updated_at) 
+VALUES (
+  'c90ad114-9182-4faa-93b1-1aec40c2c10a',
+  'test@example.com',
+  'Test User',
+  NOW(),
+  NOW()
+) ON CONFLICT (id) DO UPDATE SET
+  email = EXCLUDED.email,
+  name = EXCLUDED.name,
+  updated_at = EXCLUDED.updated_at;
+
+-- Create categories for test user
+SELECT create_user_categories('c90ad114-9182-4faa-93b1-1aec40c2c10a');
+
+-- Insert test expense
+INSERT INTO expenses (user_id, amount, description, category, date, created_at) 
+VALUES (
+  'c90ad114-9182-4faa-93b1-1aec40c2c10a',
+  15.99,
+  'Database Setup Test',
+  'Other',
+  CURRENT_DATE,
+  NOW()
+) ON CONFLICT DO NOTHING;
 
 -- ===================================================
 -- VERIFICATION QUERIES
 -- ===================================================
 
--- Verify tables exist
+-- Check what the users table looks like
+SELECT column_name, data_type, is_nullable, column_default
+FROM information_schema.columns 
+WHERE table_name = 'users' 
+ORDER BY ordinal_position;
+
+-- Verify the test user exists
+SELECT * FROM users WHERE id = 'c90ad114-9182-4faa-93b1-1aec40c2c10a';
+
+-- Check if test expense was created
+SELECT id, amount, description, category, date FROM expenses 
+WHERE user_id = 'c90ad114-9182-4faa-93b1-1aec40c2c10a'
+ORDER BY created_at DESC;
+
+-- Verify all tables exist
 SELECT 
   tablename as "Table Name",
   schemaname as "Schema"
@@ -211,34 +215,28 @@ FROM pg_tables
 WHERE tablename IN ('users', 'categories', 'expenses', 'budgets', 'wishlist', 'system_categories')
 ORDER BY tablename;
 
--- Verify test user and data
-SELECT 
-  u.name as "User Name",
-  u.email as "Email",
-  COUNT(c.id) as "Categories",
-  COUNT(e.id) as "Expenses"
-FROM users u
-LEFT JOIN categories c ON u.id = c.user_id
-LEFT JOIN expenses e ON u.id = e.user_id
-WHERE u.id = 'c90ad114-9182-4faa-93b1-1aec40c2c10a'
-GROUP BY u.id, u.name, u.email;
+-- Check category count for test user
+SELECT COUNT(*) as category_count 
+FROM categories 
+WHERE user_id = 'c90ad114-9182-4faa-93b1-1aec40c2c10a';
 
 -- ===================================================
 -- SETUP COMPLETE!
 -- ===================================================
 -- 
--- Your database is now fully configured with:
--- ✅ All required tables and relationships
--- ✅ AI processing fields for receipt scanning
--- ✅ Performance indexes
--- ✅ System categories and user categories
--- ✅ Helper functions for user management
--- ✅ Test data for verification
+-- ✅ All tables created successfully
+-- ✅ AI processing fields added
+-- ✅ Performance indexes created
+-- ✅ System categories populated
+-- ✅ Helper functions installed
+-- ✅ Test data inserted and verified
 --
--- Next steps:
--- 1. Configure your .env.local file with database credentials
--- 2. Test the application with receipt upload
--- 3. Verify AI processing is working correctly
+-- Your database is ready for the Expense Tracker PWA!
 -- 
--- For issues, check the verification queries above
+-- Next steps:
+-- 1. Update your .env.local with Supabase credentials
+-- 2. Test receipt upload functionality
+-- 3. Remove test data when ready for production:
+--    DELETE FROM expenses WHERE user_id = 'c90ad114-9182-4faa-93b1-1aec40c2c10a';
+--    DELETE FROM users WHERE email = 'test@example.com';
 -- ===================================================
