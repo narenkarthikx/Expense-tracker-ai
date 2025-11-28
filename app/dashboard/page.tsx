@@ -4,13 +4,16 @@ import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth/auth-provider"
 import DashboardLayout from "@/components/layout/dashboard-layout"
-import ExpenseOverview from "@/components/dashboard/expense-overview"
+import DateWiseTracking from "@/components/dashboard/expense-overview"
 import RecentExpenses from "@/components/dashboard/recent-expenses"
 import BudgetStatus from "@/components/dashboard/budget-status"
 import QuickAddExpense from "@/components/dashboard/quick-add-expense"
+import ExpenseInsights from "@/components/dashboard/expense-insights"
+import SmartSuggestions from "@/components/dashboard/smart-suggestions"
+import ExpenseStatistics from "@/components/dashboard/expense-statistics"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { ShoppingCart, TrendingUp, Loader } from "lucide-react"
+import { ShoppingCart, Loader } from "lucide-react"
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -45,12 +48,6 @@ export default function DashboardPage() {
               Shopping List
             </Button>
           </Link>
-          <Link href="/analytics">
-            <Button variant="outline" className="gap-2 bg-transparent">
-              <TrendingUp className="w-4 h-4" />
-              View Analytics
-            </Button>
-          </Link>
         </div>
 
         {/* Main Grid */}
@@ -63,15 +60,26 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        <div className="grid grid-cols-1 gap-6">
+          <RecentExpenses />
+        </div>
+
+        {/* Insights and Tracking */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <ExpenseOverview />
+          <div>
+            <DateWiseTracking />
           </div>
           <div>
-            <div className="space-y-6">
-              <RecentExpenses />
-            </div>
+            <ExpenseInsights />
           </div>
+          <div>
+            <SmartSuggestions />
+          </div>
+        </div>
+
+        {/* Statistics */}
+        <div className="grid grid-cols-1 gap-6">
+          <ExpenseStatistics />
         </div>
       </div>
     </DashboardLayout>

@@ -102,7 +102,12 @@ export default function RecentExpenses() {
                 <div className="text-2xl">{CATEGORY_ICONS[expense.category] || "📌"}</div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm truncate">{expense.description}</p>
-                  <p className="text-xs text-muted-foreground">{new Date(expense.date).toLocaleDateString()}</p>
+                  <p className="text-xs text-muted-foreground" suppressHydrationWarning>
+                    {typeof window !== 'undefined' 
+                      ? new Date(expense.date).toLocaleDateString() 
+                      : expense.date
+                    }
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-3 ml-2">

@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/components/auth/auth-provider"
 import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { useEffect, useState, useCallback } from "react"
 import ExpenseList from "@/components/expenses/expense-list"
 import ExpenseFilters from "@/components/expenses/expense-filters"
 import SimpleExpenseForm from "@/components/simple-expense-form"
@@ -12,6 +12,16 @@ import { Spinner } from "@/components/ui/spinner"
 export default function ExpensesPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
+  const [filters, setFilters] = useState({
+    search: '',
+    category: 'All',
+    dateFilter: 'all',
+    dateRange: {} as { start?: string, end?: string }
+  })
+
+  const handleFiltersChange = useCallback((newFilters: typeof filters) => {
+    setFilters(newFilters)
+  }, [])
 
   useEffect(() => {
     if (!loading && !user) {
@@ -36,7 +46,7 @@ export default function ExpensesPage() {
         <Receipt className="w-8 h-8 text-primary" />
         <div>
           <h1 className="text-4xl font-bold tracking-tight">Expenses</h1>
-          <p className="text-muted-foreground">Add and manage your expenses</p>
+          <p className="text-muted-foreground">Add and manage your expenses with smart filtering</p>
         </div>
       </div>
 
@@ -44,8 +54,8 @@ export default function ExpensesPage() {
       <SimpleExpenseForm />
 
       {/* Filters and List */}
-      <ExpenseFilters />
-      <ExpenseList />
+      <ExpenseFilters onFiltersChange={handleFiltersChange} />
+      <ExpenseList filters={filters} />
     </div>
   )
 }

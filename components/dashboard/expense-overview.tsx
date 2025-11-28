@@ -2,73 +2,121 @@
 
 import { useEffect, useState } from "react"
 import { Card } from "@/components/ui/card"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase-client"
-import { Loader } from "lucide-react"
+import { Loader, Calendar, TrendingUp, ArrowUp, ArrowDown } from "lucide-react"
 
-const COLORS = ["#0891b2", "#ec4899", "#f59e0b", "#8b5cf6", "#ef4444", "#10b981", "#3b82f6", "#6b7280"]
+type TimeFilter = 'today' | 'yesterday' | 'week' | 'month'
 
-export default function ExpenseOverview() {
-  const [data, setData] = useState<any[]>([])
-  const [categoryData, setCategoryData] = useState<any[]>([])
+interface ExpenseStats {
+  total: number
+  count: number
+  change: number
+  changePercent: number
+}
+
+export default function DateWiseTracking() {
+  const [activeFilter, setActiveFilter] = useState<TimeFilter>('today')
+  const [stats, setStats] = useState<ExpenseStats>({ total: 0, count: 0, change: 0, changePercent: 0 })
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
   useEffect(() => {
-    fetchExpenseData()
-  }, [])
+    fetchExpenseStats()
+  }, [activeFilter])
 
-  const fetchExpenseData = async () => {
+  const getDateRange = (filter: TimeFilter) => {
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    
+    switch (filter) {
+      case 'today':
+        return {
+          start: today,
+          end: new Date(today.getTime() + 24 * 60 * 60 * 1000),
+          compareStart: new Date(today.getTime() - 24 * 60 * 60 * 1000),
+          compareEnd: today
+        }
+      case 'yesterday':
+        const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000)
+        return {
+          start: yesterday,
+          end: today,
+          compareStart: new Date(yesterday.getTime() - 24 * 60 * 60 * 1000),
+          compareEnd: yesterday
+        }
+      case 'week':
+        const weekStart = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+        return {
+          start: weekStart,
+          end: today,
+          compareStart: new Date(weekStart.getTime() - 7 * 24 * 60 * 60 * 1000),
+          compareEnd: weekStart
+        }
+      case 'month':
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+        const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+        const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0)
+        return {
+          start: monthStart,
+          end: now,
+          compareStart: prevMonthStart,
+          compareEnd: prevMonthEnd
+        }
+      default:
+        return { start: today, end: new Date(today.getTime() + 24 * 60 * 60 * 1000), compareStart: today, compareEnd: today }
+    }
+  }
+
+  const fetchExpenseStats = async () => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      const { data: expenses } = await supabase
+      const { start, end, compareStart, compareEnd } = getDateRange(activeFilter)
+
+      // Get current period expenses
+      const { data: currentExpenses } = await supabase
         .from("expenses")
-        .select("*")
+        .select("amount")
         .eq("user_id", user.id)
-        .order("date", { ascending: true })
+        .gte("date", start.toISOString().split('T')[0])
+        .lt("date", end.toISOString().split('T')[0])
 
-      if (expenses) {
-        // Group by month for bar chart
-        const monthlyData: any = {}
-        expenses.forEach((exp: any) => {
-          const date = new Date(exp.date)
-          const month = date.toLocaleString("default", { month: "short" })
-          monthlyData[month] = (monthlyData[month] || 0) + exp.amount
-        })
+      // Get comparison period expenses
+      const { data: compareExpenses } = await supabase
+        .from("expenses")
+        .select("amount")
+        .eq("user_id", user.id)
+        .gte("date", compareStart.toISOString().split('T')[0])
+        .lt("date", compareEnd.toISOString().split('T')[0])
 
-        const chartData = Object.entries(monthlyData).map(([month, amount]) => ({
-          name: month,
-          amount: amount,
-        }))
+      const currentTotal = currentExpenses?.reduce((sum, exp) => sum + exp.amount, 0) || 0
+      const compareTotal = compareExpenses?.reduce((sum, exp) => sum + exp.amount, 0) || 0
+      const change = currentTotal - compareTotal
+      const changePercent = compareTotal > 0 ? (change / compareTotal) * 100 : 0
 
-        setData(chartData)
-
-        // Group by category for pie chart
-        const categoryBreakdown: any = {}
-        expenses.forEach((exp: any) => {
-          const cat = exp.category || "Other"
-          categoryBreakdown[cat] = (categoryBreakdown[cat] || 0) + exp.amount
-        })
-
-        const pieData = Object.entries(categoryBreakdown).map(([name, value]) => ({
-          name,
-          value,
-        }))
-
-        setCategoryData(pieData)
-      }
+      setStats({
+        total: currentTotal,
+        count: currentExpenses?.length || 0,
+        change,
+        changePercent
+      })
     } finally {
       setLoading(false)
     }
   }
 
+  const filterLabels = {
+    today: 'Today',
+    yesterday: 'Yesterday', 
+    week: 'This Week',
+    month: 'This Month'
+  }
+
   if (loading) {
     return (
-      <Card className="p-6 flex items-center justify-center h-80">
+      <Card className="p-6 flex items-center justify-center h-48">
         <Loader className="w-6 h-6 animate-spin text-primary" />
       </Card>
     )
@@ -76,24 +124,58 @@ export default function ExpenseOverview() {
 
   return (
     <Card className="p-6 bg-gradient-to-br from-card to-card/50">
-      <h3 className="text-xl font-bold mb-6">Spending Overview</h3>
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" />
-          <XAxis dataKey="name" stroke="currentColor" style={{ fontSize: "12px" }} />
-          <YAxis stroke="currentColor" style={{ fontSize: "12px" }} />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: "rgba(0,0,0,0.8)",
-              border: "none",
-              borderRadius: "8px",
-              color: "white",
-            }}
-            formatter={(value: any) => `$${value.toFixed(2)}`}
-          />
-          <Bar dataKey="amount" fill="#06b6d4" radius={[8, 8, 0, 0]} />
-        </BarChart>
-      </ResponsiveContainer>
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-xl font-bold flex items-center gap-2">
+          <Calendar className="w-5 h-5 text-primary" />
+          Expense Tracking
+        </h3>
+      </div>
+
+      {/* Time Filter Buttons */}
+      <div className="grid grid-cols-4 gap-2 mb-6">
+        {(Object.keys(filterLabels) as TimeFilter[]).map((filter) => (
+          <Button
+            key={filter}
+            variant={activeFilter === filter ? "default" : "outline"}
+            size="sm"
+            onClick={() => setActiveFilter(filter)}
+            className={activeFilter === filter ? "bg-primary text-white" : ""}
+          >
+            {filterLabels[filter]}
+          </Button>
+        ))}
+      </div>
+
+      {/* Stats Display */}
+      <div className="space-y-4">
+        <div className="text-center">
+          <p className="text-3xl font-bold text-primary">${stats.total.toFixed(2)}</p>
+          <p className="text-sm text-muted-foreground">
+            {stats.count} expense{stats.count !== 1 ? 's' : ''} {filterLabels[activeFilter].toLowerCase()}
+          </p>
+        </div>
+
+        {/* Comparison */}
+        {stats.change !== 0 && (
+          <div className="flex items-center justify-center gap-2 p-3 rounded-lg bg-muted/30">
+            {stats.change > 0 ? (
+              <ArrowUp className="w-4 h-4 text-red-500" />
+            ) : (
+              <ArrowDown className="w-4 h-4 text-green-500" />
+            )}
+            <span className={`text-sm font-medium ${
+              stats.change > 0 ? 'text-red-500' : 'text-green-500'
+            }`}>
+              ${Math.abs(stats.change).toFixed(2)} ({Math.abs(stats.changePercent).toFixed(1)}%)
+            </span>
+            <span className="text-sm text-muted-foreground">
+              vs {activeFilter === 'today' ? 'yesterday' : 
+                   activeFilter === 'yesterday' ? 'day before' :
+                   activeFilter === 'week' ? 'last week' : 'last month'}
+            </span>
+          </div>
+        )}
+      </div>
     </Card>
   )
 }
