@@ -137,7 +137,7 @@ export default function ExpenseInsights() {
           Smart Insights
         </h3>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Daily Comparison */}
           <div className="space-y-2">
             <div className="flex items-center gap-2">
@@ -150,7 +150,7 @@ export default function ExpenseInsights() {
                 {isIncreased ? 'Spent More' : 'Saved Today'}
               </span>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground break-words">
               ₹{Math.abs(dailyChange).toFixed(0)} vs yesterday
             </p>
           </div>
@@ -174,7 +174,7 @@ export default function ExpenseInsights() {
               <Target className="w-4 h-4 text-blue-500" />
               <span className="text-sm font-medium">Top Expense</span>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground break-words">
               {insights.topCategory.name} - ₹{insights.topCategory.amount.toFixed(0)}
             </p>
           </div>

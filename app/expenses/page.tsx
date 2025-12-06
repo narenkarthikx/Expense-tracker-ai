@@ -45,8 +45,8 @@ export default function ExpensesPage() {
       <div className="flex items-center gap-3">
         <Receipt className="w-8 h-8 text-primary" />
         <div>
-          <h1 className="text-4xl font-bold tracking-tight">Expenses</h1>
-          <p className="text-muted-foreground">Add and manage your expenses with smart filtering</p>
+          <h1 className="text-4xl font-bold tracking-tight">Add & Manage Expenses</h1>
+          <p className="text-muted-foreground">Smart AI receipt processing or manual entry - all in one place</p>
         </div>
       </div>
 

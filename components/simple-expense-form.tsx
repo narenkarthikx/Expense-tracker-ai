@@ -4,16 +4,24 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/components/auth/auth-provider"
 import { createClient } from "@/lib/supabase-client"
 import { Plus, Upload, Loader2 } from "lucide-react"
+
+const CATEGORIES = [
+  "Groceries", "Dining", "Transportation", "Shopping", "Healthcare", 
+  "Entertainment", "Utilities", "Travel", "Gas", "Other"
+]
 
 export default function SimpleExpenseForm() {
   const { user } = useAuth()
   const { toast } = useToast()
   const [amount, setAmount] = useState("")
   const [description, setDescription] = useState("")
+  const [category, setCategory] = useState("")
   const [loading, setLoading] = useState(false)
   const [receiptLoading, setReceiptLoading] = useState(false)
   const supabase = createClient()
@@ -29,7 +37,7 @@ export default function SimpleExpenseForm() {
         user_id: user.id,
         amount: parseFloat(amount),
         description: description || "Manual Entry",
-        category: "Other", // Default category for manual entries
+        category: category || "Other", // Use selected category or default to Other
         date: new Date().toISOString().split("T")[0],
         processing_status: "completed"
       }
@@ -62,6 +70,7 @@ export default function SimpleExpenseForm() {
         })
         setAmount("")
         setDescription("")
+        setCategory("")
         // Refresh page after 1 second
         setTimeout(() => window.location.reload(), 1000)
       }
@@ -159,11 +168,20 @@ export default function SimpleExpenseForm() {
 
   return (
     <div className="space-y-6">
-      {/* Receipt Upload */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Upload className="w-5 h-5 text-blue-500" />
-          📸 AI Receipt Upload
+      {/* Main Header */}
+      <div className="text-center space-y-2">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+          Choose Your Method
+        </h2>
+        <p className="text-muted-foreground">Add expenses using AI receipt scanning or manual entry</p>
+      </div>
+
+      {/* AI Receipt Upload - Primary Method */}
+      <Card className="p-6 border-2 border-blue-200 bg-gradient-to-br from-blue-50/50 to-indigo-50/50">
+        <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+          <Upload className="w-6 h-6 text-blue-500" />
+          📸 AI Receipt Scanner
+          <Badge className="ml-auto bg-blue-100 text-blue-700">Recommended</Badge>
         </h3>
         
         <div className="space-y-4">
@@ -183,16 +201,17 @@ export default function SimpleExpenseForm() {
           )}
           
           <p className="text-sm text-muted-foreground">
-            Upload a receipt image and AI will automatically extract expense details
+            📸 Upload a receipt image and AI will automatically extract expense details and categorize them intelligently based on merchant and items
           </p>
         </div>
       </Card>
 
-      {/* Manual Entry */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Plus className="w-5 h-5 text-green-500" />
+      {/* Manual Entry - Secondary Method */}
+      <Card className="p-6 border border-gray-200 bg-gradient-to-br from-gray-50/50 to-slate-50/50">
+        <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+          <Plus className="w-6 h-6 text-green-500" />
           ✏️ Manual Entry
+          <Badge variant="outline" className="ml-auto">Traditional</Badge>
         </h3>
 
         <form onSubmit={handleAddExpense} className="space-y-4">
@@ -218,6 +237,22 @@ export default function SimpleExpenseForm() {
               onChange={(e) => setDescription(e.target.value)}
               disabled={loading}
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">Category</label>
+            <Select value={category} onValueChange={setCategory} disabled={loading}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select category (AI auto-categorizes receipts)" />
+              </SelectTrigger>
+              <SelectContent>
+                {CATEGORIES.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <Button 
