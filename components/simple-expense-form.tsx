@@ -257,12 +257,10 @@ export default function SimpleExpenseForm() {
       return
     }
     
-    toast({
-      title: "📸 Opening camera...",
-      description: "Take a photo of your receipt",
-    })
-    
+    // Directly trigger camera without toast (toast might block on mobile)
+    console.log("Triggering camera input click...")
     cameraInputRef.current?.click()
+    console.log("Camera input clicked")
   }
 
   const handleFileClick = () => {

@@ -73,41 +73,54 @@ export async function POST(request: NextRequest) {
               content: [
                 {
                   type: "text",
-                  text: `You are an expert at reading receipts and invoices. Please analyze this receipt image and extract the following information in JSON format:
+                  text: `You are a receipt OCR system. Your PRIMARY GOAL is to extract the TOTAL AMOUNT accurately.
+
+Look for these keywords on the receipt for the final amount:
+- "TOTAL", "Total", "Grand Total", "Net Total"
+- "Amount Payable", "Amount Due", "Bill Amount"
+- The LARGEST number on the receipt (usually at the bottom)
+
+Extract in this EXACT JSON format:
 
 {
-  "store_name": "name of the store/merchant",
-  "date": "YYYY-MM-DD format",
-  "items": [
-    {
-      "description": "item description",
-      "quantity": 1,
-      "price": 0.00
-    }
-  ],
+  "store_name": "store name from top of receipt",
+  "date": "YYYY-MM-DD",
+  "items": [{"description": "item name", "quantity": 1, "price": 0.00}],
   "subtotal": 0.00,
   "tax": 0.00,
   "total": 0.00,
-  "category": "main expense category from: Groceries, Dining, Transportation, Shopping, Healthcare, Entertainment, Utilities, Travel, Gas, Other"
+  "category": "category"
 }
 
-Rules for categorization:
-- Groceries: supermarkets, grocery stores, food items for home
-- Dining: restaurants, cafes, takeout, food delivery
-- Transportation: gas stations, public transit, rideshare, parking
-- Shopping: retail stores, clothing, electronics, general merchandise
-- Healthcare: pharmacy, medical, dental, health services
-- Entertainment: movies, games, recreational activities
-- Utilities: phone bills, internet, electricity (if receipt shows this)
-- Travel: hotels, flights, travel-related expenses
-- Gas: specifically for vehicle fuel
-- Other: anything that doesn't fit the above categories
+CRITICAL RULES FOR TOTAL:
+1. Look for the word "TOTAL" or similar - this is the MOST IMPORTANT number
+2. If you see "₹500" or "Rs. 500" near "TOTAL", use 500
+3. The total is usually the last/bottom-most amount on the receipt
+4. If subtotal is 450 and tax is 50, then total MUST be 500
+5. Total should be >= subtotal
+6. Round to 2 decimal places
 
-If you cannot read certain fields, use null for those values. Ensure the category is one of the specified options. Only return valid JSON.`
+CATEGORIES (match store to category):
+- Groceries: Big Bazaar, DMart, Reliance Fresh, More, vegetable shops
+- Dining: restaurants, Swiggy, Zomato, cafes, food delivery
+- Transportation: petrol pumps, metro, taxi, Uber, Ola
+- Shopping: clothing, electronics, Amazon, Flipkart, malls
+- Healthcare: Apollo, medical stores, hospitals
+- Entertainment: PVR, movies, games
+- Utilities: Jio, Airtel, electricity, internet bills
+- Travel: hotels, flights, train tickets
+- Gas: ONLY vehicle fuel (petrol/diesel)
+- Other: anything else
+
+EXAMPLE:
+If receipt shows "Big Bazaar" at top and "TOTAL: Rs. 1,234" at bottom, return:
+{"store_name": "Big Bazaar", "total": 1234.00, "category": "Groceries", ...}
+
+Return ONLY valid JSON, no extra text.`
                 },
                 {
                   type: "image",
-                  image: image, // base64 image
+                  image: image,
                 },
               ],
             },
@@ -122,67 +135,71 @@ If you cannot read certain fields, use null for those values. Ensure the categor
           const jsonMatch = extractedText.match(/\{[\s\S]*\}/)
           extractedData = jsonMatch ? JSON.parse(jsonMatch[0]) : null
           
-          // Fix total calculation to match items sum
-          if (extractedData && extractedData.items && Array.isArray(extractedData.items)) {
-            const itemsTotal = extractedData.items.reduce((sum: number, item: any) => {
-              const itemPrice = (item.price || 0) * (item.quantity || 1)
-              return sum + itemPrice
-            }, 0)
-            
-            const calculatedTotal = itemsTotal + (extractedData.tax || 0)
-            
-            // Use calculated total if AI total doesn't match
-            if (Math.abs(calculatedTotal - (extractedData.total || 0)) > 1) {
-              console.log(`Total mismatch detected. AI: ${extractedData.total}, Calculated: ${calculatedTotal}. Using calculated.`)
-              extractedData.subtotal = itemsTotal
-              extractedData.total = calculatedTotal
-            }
-          }
-        } catch (parseError) {
-          console.error("JSON Parse error:", parseError)
-          extractedData = null
-        }
-
-        // If we got here, the model worked
-        break
-
-      } catch (modelError: any) {
-        console.log(`❌ Failed with model ${modelName}:`, modelError.message)
-        lastError = modelError
-        continue
-      }
-    }
-
+          console.log("Parsed data:", extractedData)
+          
+          // CRITICAL: Ensure total is properly set
+          if (extractedData) {
+            // If total is missing or zero, calculate it
+            if (!extractedData.total || extractedData.total <= 0) {
+              console.log("⚠️ Total missing or zero, calculating from items...")
+              
+              if (extractedData.items && Array.isArray(extractedData.items)) {
+                const itemsTotal = extractedData.items.reduce((sum: number, item: any) => {
+                  const itemPrice = (item.price || 0) * (item.quantity || 1)
+                  return sum + itemPrice
+                }, 0)
+                
+                extractedData.subtotal = itemsTotal
+                extractedData.total = itemsTotal + (extractedData.tax || 0)
+                console.log(`Calculated total: ${extractedData.total} (items: ${itemsTotal} + tax: ${extractedData.tax || 0})`)
+              } else {
+                // Last resort: use subtotal if available
+                extractedData.total = extractedData.subtotal || 10.00
+                console.log(`Using subtotal as total: ${extractedData.total}`)
+              }
+            } else {
+              console.log(`✅ Total found: ${extractedData.total}`)
+              
+              // Verify total makes sense with items (if items exist)
+              if (extractedData.items && Array.isArray(extractedData.items)) {
+                const itemsTotal = extractedData.items.reduce((sum: number, item: any) => {
+                  const itemPrice = (item.price || 0) * (item.quantity || 1)
+                  return sum + itemPrice
+                }, 0)
     if (!extractedData) {
       console.error("All models failed, using fallback")
-      // Fallback extraction if all AI models fail
       extractedData = {
         store_name: "Receipt Upload",
         date: new Date().toISOString().split("T")[0],
-        items: [{ description: "Extracted item", quantity: 1, price: 5.00 }],
-        subtotal: 5.00,
+        items: [{ description: "Receipt item", quantity: 1, price: 10.00 }],
+        subtotal: 10.00,
         tax: 0,
-        total: 5.00,
-        category: "Other",
-        payment_method: "unknown"
+        total: 10.00,
+        category: "Other"
       }
     }
 
-    // Ensure we have valid total
-    if (!extractedData.total || extractedData.total <= 0) {
-      extractedData.total = 5.00
+    // FINAL VALIDATION: Ensure total is valid before saving
+    const finalTotal = extractedData.total || extractedData.subtotal || 10.00
+    console.log(`💰 FINAL TOTAL TO SAVE: ₹${finalTotal}`)
+    
+    if (finalTotal <= 0 || isNaN(finalTotal)) {
+      console.error("⚠️ Invalid final total, using minimum: 10.00")
+      extractedData.total = 10.00
+    } else {
+      extractedData.total = finalTotal
     }
 
     // Store in Supabase with proper formatting for the frontend
     const expenseData = {
       user_id: userId,
-      amount: extractedData.total || 5.00,
+      amount: extractedData.total,
       description: extractedData.store_name || "Receipt",
-      category: extractedData.category || "Other", // Direct category for frontend
+      category: extractedData.category || "Other",
       date: extractedData.date || new Date().toISOString().split("T")[0],
-      extracted_data: extractedData, // Keep full AI data for reference
+      extracted_data: extractedData,
       receipt_url: null,
-      ai_confidence: extractedData ? 0.85 : 0.1,
+      ai_confidence: 0.85,
       processing_status: extractedData ? 'completed' : 'failed',
     }
 
