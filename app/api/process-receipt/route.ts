@@ -82,20 +82,13 @@ export async function POST(request: NextRequest) {
     {
       "description": "item description",
       "quantity": 1,
-      "price": 0.00,
-      "category": "specific category for this item"
+      "price": 0.00
     }
   ],
   "subtotal": 0.00,
   "tax": 0.00,
   "total": 0.00,
-  "category": "main expense category from: Groceries, Dining, Transportation, Shopping, Healthcare, Entertainment, Utilities, Travel, Gas, Other",
-  "payment_method": "cash/card/etc",
-  "receipt_details": {
-    "receipt_number": "if visible",
-    "cashier": "if visible",
-    "location": "store address if visible"
-  }
+  "category": "main expense category from: Groceries, Dining, Transportation, Shopping, Healthcare, Entertainment, Utilities, Travel, Gas, Other"
 }
 
 Rules for categorization:
@@ -167,15 +160,13 @@ If you cannot read certain fields, use null for those values. Ensure the categor
     const expenseData = {
       user_id: userId,
       amount: extractedData.total || 5.00,
-      description: `${extractedData.store_name || "Receipt"} - ${extractedData.items?.[0]?.description || "Expense"}`,
+      description: extractedData.store_name || "Receipt",
       category: extractedData.category || "Other", // Direct category for frontend
       date: extractedData.date || new Date().toISOString().split("T")[0],
       extracted_data: extractedData, // Keep full AI data for reference
       receipt_url: null,
       ai_confidence: extractedData ? 0.85 : 0.1,
       processing_status: extractedData ? 'completed' : 'failed',
-      merchant: extractedData.store_name || null,
-      payment_method: extractedData.payment_method || null,
     }
 
     console.log("Inserting expense data:", expenseData)

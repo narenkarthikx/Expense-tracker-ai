@@ -300,16 +300,16 @@ export default function ExpenseList({ filters }: ExpenseListProps) {
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-foreground truncate text-sm">{expense.description}</p>
                           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5">
-                            {expense.merchant && (
-                              <div className="flex items-center gap-0.5">
-                                <MapPin className="w-2.5 h-2.5" />
-                                <span className="truncate">{expense.merchant}</span>
-                              </div>
-                            )}
-                            {expense.category && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
+                              {expense.category}
+                            </Badge>
+                            {expense.ai_confidence && expense.ai_confidence > 0.5 && (
                               <>
-                                {expense.merchant && <span>•</span>}
-                                <span>{expense.category}</span>
+                                <span>•</span>
+                                <span className="flex items-center gap-0.5">
+                                  <FileText className="w-2.5 h-2.5" />
+                                  AI
+                                </span>
                               </>
                             )}
                           </div>
@@ -378,24 +378,51 @@ export default function ExpenseList({ filters }: ExpenseListProps) {
                     <span className="font-medium">{selectedExpense.category}</span>
                   </div>
 
-                  {selectedExpense.merchant && (
+                  {selectedExpense.extracted_data?.store_name && (
                     <div className="flex justify-between py-2 border-b">
-                      <span className="text-muted-foreground">Merchant</span>
-                      <span className="font-medium">{selectedExpense.merchant}</span>
+                      <span className="text-muted-foreground">Store</span>
+                      <span className="font-medium">{selectedExpense.extracted_data.store_name}</span>
                     </div>
                   )}
 
-                  {selectedExpense.payment_method && (
-                    <div className="flex justify-between py-2 border-b">
-                      <span className="text-muted-foreground">Payment</span>
-                      <span className="font-medium">{selectedExpense.payment_method}</span>
+                  {selectedExpense.extracted_data?.items && selectedExpense.extracted_data.items.length > 0 && (
+                    <div className="py-2 border-b">
+                      <span className="text-muted-foreground block mb-2">Items Purchased</span>
+                      <div className="space-y-1">
+                        {selectedExpense.extracted_data.items.map((item: any, idx: number) => (
+                          <div key={idx} className="flex justify-between text-sm bg-muted/30 p-2 rounded">
+                            <span className="flex-1">{item.description}</span>
+                            {item.quantity > 1 && (
+                              <span className="text-muted-foreground mx-2">x{item.quantity}</span>
+                            )}
+                            <span className="font-medium">₹{item.price?.toFixed(0)}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
 
-                  {selectedExpense.ai_confidence && selectedExpense.ai_confidence > 0.7 && (
+                  {selectedExpense.extracted_data?.subtotal && (
                     <div className="flex justify-between py-2 border-b">
-                      <span className="text-muted-foreground">Source</span>
-                      <span className="font-medium text-blue-600">AI Receipt ({(selectedExpense.ai_confidence * 100).toFixed(0)}%)</span>
+                      <span className="text-muted-foreground">Subtotal</span>
+                      <span className="font-medium">₹{selectedExpense.extracted_data.subtotal.toFixed(0)}</span>
+                    </div>
+                  )}
+
+                  {selectedExpense.extracted_data?.tax && selectedExpense.extracted_data.tax > 0 && (
+                    <div className="flex justify-between py-2 border-b">
+                      <span className="text-muted-foreground">Tax</span>
+                      <span className="font-medium">₹{selectedExpense.extracted_data.tax.toFixed(0)}</span>
+                    </div>
+                  )}
+
+                  {selectedExpense.ai_confidence && selectedExpense.ai_confidence > 0.5 && (
+                    <div className="flex justify-between py-2">
+                      <span className="text-muted-foreground">AI Scanned</span>
+                      <span className="font-medium flex items-center gap-1">
+                        <FileText className="w-3 h-3" />
+                        Receipt
+                      </span>
                     </div>
                   )}
                 </div>

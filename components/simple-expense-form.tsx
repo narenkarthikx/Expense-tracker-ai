@@ -111,12 +111,17 @@ export default function SimpleExpenseForm() {
   // Simple receipt upload
   const handleReceiptUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
+    
+    console.log("handleReceiptUpload triggered", {
+      hasFile: !!file,
+      fileName: file?.name,
+      fileType: file?.type,
+      fileSize: file?.size,
+      source: e.target === cameraInputRef.current ? 'camera' : 'file'
+    })
+    
     if (!file) {
-      toast({
-        title: "No file selected",
-        description: "Please select an image file to upload",
-        variant: "destructive",
-      })
+      console.log("No file selected")
       return
     }
     
@@ -131,6 +136,7 @@ export default function SimpleExpenseForm() {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
+      console.error("Invalid file type:", file.type)
       toast({
         title: "Invalid file type",
         description: "Please select an image file (JPG, PNG, etc.)",
@@ -144,6 +150,7 @@ export default function SimpleExpenseForm() {
 
     // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
+      console.error("File too large:", file.size)
       toast({
         title: "File too large",
         description: "Please select an image smaller than 10MB",
@@ -155,6 +162,7 @@ export default function SimpleExpenseForm() {
       return
     }
 
+    console.log("File validation passed, processing...")
     await processReceipt(file)
     
     // Reset inputs after processing
@@ -234,10 +242,34 @@ export default function SimpleExpenseForm() {
   }
 
   const handleCameraClick = () => {
+    console.log("Camera button clicked", {
+      cameraSupported,
+      inputExists: !!cameraInputRef.current,
+      disabled: receiptLoading
+    })
+    
+    if (!cameraSupported) {
+      toast({
+        title: "Camera not available",
+        description: "Your device doesn't support camera capture",
+        variant: "destructive",
+      })
+      return
+    }
+    
+    toast({
+      title: "📸 Opening camera...",
+      description: "Take a photo of your receipt",
+    })
+    
     cameraInputRef.current?.click()
   }
 
   const handleFileClick = () => {
+    console.log("File button clicked", {
+      inputExists: !!fileInputRef.current,
+      disabled: receiptLoading
+    })
     fileInputRef.current?.click()
   }
 
