@@ -53,21 +53,6 @@ export function CategoryManager() {
       console.error('Error loading categories:', error)
     }
   }
-      if (!user) return
-
-      const { data, error } = await supabase
-        .from('user_categories')
-        .select('categories')
-        .eq('user_id', user.id)
-        .single()
-
-      if (data?.categories) {
-        setCategories(data.categories)
-      }
-    } catch (error) {
-      console.error('Error loading categories:', error)
-    }
-  }
 
   const saveCategoriesToDB = useCallback(async (updatedCategories: string[]) => {
     try {
