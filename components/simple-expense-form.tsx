@@ -374,13 +374,13 @@ export default function SimpleExpenseForm() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      {/* AI Receipt Upload - Priority Method */}
+      {/* AI Scan - Priority Method */}
       <Card className="p-5 border-2 border-primary/30 bg-gradient-to-br from-blue-50/50 via-indigo-50/30 to-purple-50/50 dark:from-blue-950/20 dark:via-indigo-950/10 dark:to-purple-950/20">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-base font-semibold flex items-center gap-2">
               <Upload className="w-5 h-5 text-primary" />
-              AI Receipt Scanner
+              AI Scan
             </h3>
             <Badge className="bg-primary/10 text-primary border-primary/20">Recommended</Badge>
           </div>

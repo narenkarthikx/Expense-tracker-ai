@@ -227,7 +227,7 @@ export default function ExpenseStatistics() {
             <p>• Weekly spending: ₹{stats.avgWeekly.toFixed(0)}</p>
             <p>• {stats.aiScannedCount > 0 
               ? `${((stats.aiScannedCount / stats.totalExpenses) * 100).toFixed(0)}% AI scanned` 
-              : 'Try AI receipt scanning!'}</p>
+              : 'Try AI scan for quick entry!'}</p>
             <p>• Active tracking: {stats.categoryCount} categories</p>
             <p>• Entry rate: {stats.expenseFrequency.daily.toFixed(1)} expenses/day</p>
           </div>

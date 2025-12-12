@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Plus, X, Edit2, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -53,9 +53,40 @@ export function CategoryManager() {
     }
   }
 
-  async function saveCategories(updatedCategories: string[]) {
+  const supabase = createClient()
+  const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES)
+  const [newCategory, setNewCategory] = useState("")
+  const [editingIndex, setEditingIndex] = useState<number | null>(null)
+  const [editValue, setEditValue] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    loadCategories()
+  }, [])
+
+  async function loadCategories() {
     try {
-      setLoading(true)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data, error } = await supabase
+        .from('user_categories')
+        .select('categories')
+        .eq('user_id', user.id)
+        .single()
+
+      if (data?.categories) {
+        setCategories(data.categories)
+      }
+    } catch (error) {
+      console.error('Error loading categories:', error)
+    }
+  }
+
+  const saveCategoriesToDB = useCallback(async (updatedCategories: string[]) => {
+    try {
+      setSaving(true)
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
@@ -67,16 +98,15 @@ export function CategoryManager() {
         })
 
       if (error) throw error
-      
-      setCategories(updatedCategories)
-      toast.success("Categories updated successfully")
     } catch (error) {
       console.error('Error saving categories:', error)
       toast.error("Failed to save categories")
+      // Reload categories on error
+      loadCategories()
     } finally {
-      setLoading(false)
+      setSaving(false)
     }
-  }
+  }, [supabase])
 
   function handleAddCategory() {
     const trimmed = newCategory.trim()
@@ -90,13 +120,17 @@ export function CategoryManager() {
     }
     
     const updated = [...categories, trimmed]
-    saveCategories(updated)
+    setCategories(updated)
+    saveCategoriesToDB(updated)
     setNewCategory("")
+    toast.success("Category added")
   }
 
   function handleDeleteCategory(index: number) {
     const updated = categories.filter((_, i) => i !== index)
-    saveCategories(updated)
+    setCategories(updated)
+    saveCategoriesToDB(updated)
+    toast.success("Category removed")
   }
 
   function startEditing(index: number) {
@@ -117,13 +151,16 @@ export function CategoryManager() {
     
     const updated = [...categories]
     updated[index] = trimmed
-    saveCategories(updated)
+    setCategories(updated)
+    saveCategoriesToDB(updated)
     setEditingIndex(null)
     setEditValue("")
+    toast.success("Category updated")
   }
 
   function handleResetToDefault() {
-    saveCategories(DEFAULT_CATEGORIES)
+    setCategories(DEFAULT_CATEGORIES)
+    saveCategoriesToDB(DEFAULT_CATEGORIES)
     setEditingIndex(null)
     setEditValue("")
     toast.success("Categories reset to default")
@@ -209,14 +246,14 @@ export function CategoryManager() {
           variant="outline" 
           size="sm"
           onClick={handleResetToDefault}
-          disabled={loading}
+          disabled={saving}
         >
           Reset to Default
         </Button>
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Hover over categories to edit or delete. Changes are saved automatically.
+        {saving ? "Saving..." : "Hover over categories to edit or delete. Changes are saved automatically."}
       </p>
     </div>
   )

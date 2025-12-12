@@ -416,7 +416,7 @@ export default function ExpenseList({ filters }: ExpenseListProps) {
                       <span className="text-muted-foreground">Source</span>
                       <span className="font-medium flex items-center gap-1">
                         <FileText className="w-3 h-3" />
-                        AI Receipt
+                        AI Scanned
                       </span>
                     </div>
                   )}

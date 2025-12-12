@@ -18,7 +18,7 @@ export default function QuickAddExpense() {
           <Link href="/expenses" className="flex-1 sm:flex-none">
             <Button className="h-9 w-full sm:w-auto bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-sm">
               <Receipt className="w-4 h-4 mr-1.5" />
-              <span className="text-sm">AI Receipt</span>
+              <span className="text-sm">AI Scan</span>
             </Button>
           </Link>
 

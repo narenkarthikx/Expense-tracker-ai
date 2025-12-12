@@ -111,6 +111,16 @@ ITEMS (IMPORTANT):
   * "Milk 1L" → {"description": "Milk 1L", "quantity": 1, "price": 65.00}
   * "Rice 5kg x2" → {"description": "Rice 5kg", "quantity": 2, "price": 450.00}
 
+TAX (CRITICAL):
+- Look for "TAX" / "GST" / "CGST+SGST" / "IGST" / "VAT" / "Service Tax"
+- Extract the exact tax amount shown on receipt
+- If tax is shown as percentage, calculate: (subtotal × tax_rate)
+- Tax can be 0 if not shown on receipt
+- Examples:
+  * "GST 18%: ₹23.40" → tax: 23.40
+  * "Tax: ₹50.00" → tax: 50.00
+  * No tax line → tax: 0.00
+
 STORE NAME:
 - Usually at the TOP of receipt in large text
 - Extract exact name (e.g., "Big Bazaar", "Reliance Fresh")
@@ -161,6 +171,9 @@ Return ONLY valid JSON. NO explanations.`
           
           // CRITICAL: Ensure total is properly set
           if (extractedData) {
+            // Ensure tax is a valid number (default to 0 if missing)
+            extractedData.tax = typeof extractedData.tax === 'number' ? extractedData.tax : 0
+            
             // If total is missing or zero, calculate it
             if (!extractedData.total || extractedData.total <= 0) {
               console.log("⚠️ Total missing or zero, calculating from items...")
