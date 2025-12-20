@@ -13,6 +13,8 @@
   --foreground: oklch(0.2 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.2 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0 0);
 
   /* Accents for categories */
   --accent: oklch(0.68 0.2 352);

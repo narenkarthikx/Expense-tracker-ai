@@ -54,7 +54,7 @@ const CATEGORY_ICONS: { [key: string]: React.ComponentType<{ className?: string 
 function getDateRange(filter: string) {
   const now = new Date()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  
+
   switch (filter) {
     case 'today':
       return {
@@ -80,7 +80,7 @@ function getDateRange(filter: string) {
 
 function groupExpensesByDate(expenses: Expense[]) {
   const groups: { [key: string]: Expense[] } = {}
-  
+
   expenses.forEach(expense => {
     const dateKey = expense.date
     if (!groups[dateKey]) {
@@ -88,7 +88,7 @@ function groupExpensesByDate(expenses: Expense[]) {
     }
     groups[dateKey].push(expense)
   })
-  
+
   return Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0]))
 }
 
@@ -131,7 +131,7 @@ export default function ExpenseList({ filters }: ExpenseListProps) {
 
     if (filters.search) {
       const searchLower = filters.search.toLowerCase()
-      filtered = filtered.filter(expense => 
+      filtered = filtered.filter(expense =>
         expense.description.toLowerCase().includes(searchLower) ||
         (expense.merchant && expense.merchant.toLowerCase().includes(searchLower)) ||
         expense.category.toLowerCase().includes(searchLower)
@@ -153,7 +153,7 @@ export default function ExpenseList({ filters }: ExpenseListProps) {
       } else {
         const dateRange = getDateRange(filters.dateFilter)
         if (dateRange) {
-          filtered = filtered.filter(expense => 
+          filtered = filtered.filter(expense =>
             expense.date >= dateRange.start && expense.date < dateRange.end
           )
         }
@@ -178,13 +178,13 @@ export default function ExpenseList({ filters }: ExpenseListProps) {
     if (typeof window === 'undefined') {
       return new Date(dateString).toISOString().split('T')[0]
     }
-    
+
     const date = new Date(dateString)
     const now = new Date()
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000)
     const expenseDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-    
+
     if (expenseDate.getTime() === today.getTime()) {
       return 'Today'
     } else if (expenseDate.getTime() === yesterday.getTime()) {
@@ -205,7 +205,7 @@ export default function ExpenseList({ filters }: ExpenseListProps) {
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000)
     const expenseDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-    
+
     if (expenseDate.getTime() === today.getTime()) {
       return 'Today'
     } else if (expenseDate.getTime() === yesterday.getTime()) {
@@ -262,7 +262,7 @@ export default function ExpenseList({ filters }: ExpenseListProps) {
             </p>
           </div>
         </div>
-        
+
         {/* Date-wise Grouped Expenses */}
         {groupedExpenses.map(([date, expenses]) => {
           const dayTotal = expenses.reduce((sum, exp) => sum + exp.amount, 0)
@@ -361,7 +361,7 @@ export default function ExpenseList({ filters }: ExpenseListProps) {
                 </DrawerClose>
               </div>
             </DrawerHeader>
-            
+
             {selectedExpense && (
               <div className="px-6 pb-4 space-y-3">
                 {/* Amount */}
@@ -374,10 +374,10 @@ export default function ExpenseList({ filters }: ExpenseListProps) {
                   <div className="flex justify-between py-2 border-b">
                     <span className="text-muted-foreground">Date</span>
                     <span className="font-medium">
-                      {new Date(selectedExpense.date).toLocaleDateString('en-IN', { 
-                        day: 'numeric', 
-                        month: 'short', 
-                        year: 'numeric' 
+                      {new Date(selectedExpense.date).toLocaleDateString('en-IN', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
                       })}
                     </span>
                   </div>
@@ -432,8 +432,8 @@ export default function ExpenseList({ filters }: ExpenseListProps) {
                     Close
                   </Button>
                 </DrawerClose>
-                <Button 
-                  variant="destructive" 
+                <Button
+                  variant="destructive"
                   onClick={() => selectedExpense && handleDelete(selectedExpense.id)}
                   className="flex-1"
                 >
