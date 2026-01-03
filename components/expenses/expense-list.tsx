@@ -211,11 +211,10 @@ export default function ExpenseList({ filters }: ExpenseListProps) {
     } else if (expenseDate.getTime() === yesterday.getTime()) {
       return 'Yesterday'
     } else {
-      return date.toLocaleDateString("en-IN", {
-        weekday: "long",
+      return date.toLocaleDateString("en-In", {
+        weekday: "short",
         day: "numeric",
-        month: "long",
-        year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined
+        month: "short",
       })
     }
   }
@@ -248,101 +247,91 @@ export default function ExpenseList({ filters }: ExpenseListProps) {
 
   return (
     <>
-      <div className="space-y-3">
-        {/* Summary Bar */}
-        <div className="flex items-center justify-between px-3 py-2 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/20">
-          <div>
-            <p className="text-xs font-medium text-muted-foreground">
-              {filteredExpenses.length} {filteredExpenses.length === 1 ? 'expense' : 'expenses'} • {groupedExpenses.length} {groupedExpenses.length === 1 ? 'day' : 'days'}
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-lg font-bold text-primary">
-              ₹{filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0).toFixed(0)}
-            </p>
-          </div>
+      <div className="space-y-6 pb-20">
+        {/* Summary Header - Minimal */}
+        <div className="flex flex-col gap-1 px-1 pt-2">
+          <span className="text-sm text-muted-foreground font-medium">Total Spent</span>
+          <h1 className="text-4xl font-bold tracking-tight text-foreground">
+            ₹{filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0).toLocaleString('en-IN')}
+          </h1>
+          <p className="text-xs text-muted-foreground mt-1">
+            {filteredExpenses.length} transactions in {groupedExpenses.length} days
+          </p>
         </div>
 
         {/* Date-wise Grouped Expenses */}
-        {groupedExpenses.map(([date, expenses]) => {
-          const dayTotal = expenses.reduce((sum, exp) => sum + exp.amount, 0)
-          return (
-            <div key={date} className="space-y-1.5">
-              {/* Date Header */}
-              <div className="sticky top-0 z-10 flex items-center justify-between py-1.5 px-3 bg-muted/80 backdrop-blur-sm rounded-md border border-border">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-3.5 h-3.5 text-primary" />
-                  <h3 className="font-semibold text-xs">{formatDateHeader(date)}</h3>
-                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                    {expenses.length}
-                  </Badge>
+        <div className="space-y-6">
+          {groupedExpenses.map(([date, expenses]) => {
+            const dayTotal = expenses.reduce((sum, exp) => sum + exp.amount, 0)
+            return (
+              <div key={date} className="relative">
+                {/* Clean Sticky Date Header */}
+                <div className="sticky top-0 z-10 flex items-baseline justify-between py-3 bg-background/95 backdrop-blur-md border-b border-border/40 mb-2">
+                  <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">
+                    {formatDateHeader(date)}
+                  </h3>
+                  <span className="text-xs font-medium text-muted-foreground/80 font-mono">
+                    ₹{dayTotal.toLocaleString('en-IN')}
+                  </span>
                 </div>
-                <p className="text-xs font-bold text-primary">₹{dayTotal.toFixed(0)}</p>
-              </div>
 
-              {/* Expenses for this date */}
-              <div className="space-y-1.5 pl-1">
-                {expenses.map((expense) => (
-                  <Card
-                    key={expense.id}
-                    onClick={() => setSelectedExpense(expense)}
-                    className="p-2.5 hover:shadow-md transition-all bg-card border-l-2 border-l-primary/20 hover:border-l-primary group cursor-pointer"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      {/* Left: Icon & Details */}
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <div className="flex-shrink-0 p-2 rounded-lg bg-primary/10">
-                          {(() => {
-                            const Icon = CATEGORY_ICONS[expense.category] || MoreHorizontal
-                            return <Icon className="w-4 h-4 text-primary" />
-                          })()}
+                {/* Expenses List */}
+                <div className="divide-y divide-border/30">
+                  {expenses.map((expense) => {
+                    const Icon = CATEGORY_ICONS[expense.category] || MoreHorizontal
+
+                    return (
+                      <div
+                        key={expense.id}
+                        onClick={() => setSelectedExpense(expense)}
+                        className="group flex items-center gap-4 py-3.5 px-1 hover:bg-muted/40 active:bg-muted/60 rounded-xl -mx-1 transition-all cursor-pointer"
+                      >
+                        {/* Category Icon */}
+                        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-secondary/50 flex items-center justify-center text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                          <Icon className="w-5 h-5 stroke-[1.5]" />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-foreground truncate text-sm">{expense.description}</p>
-                          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5">
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
-                              {expense.category}
-                            </Badge>
-                            {expense.ai_confidence && expense.ai_confidence > 0.5 && (
-                              <>
-                                <span>•</span>
-                                <span className="flex items-center gap-0.5">
-                                  <FileText className="w-2.5 h-2.5" />
-                                  AI
-                                </span>
-                              </>
-                            )}
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5">
+                          <div className="flex items-center justify-between gap-4">
+                            <p className="font-semibold text-base leading-none text-foreground truncate">
+                              {expense.merchant || expense.description}
+                            </p>
+                            <p className="font-semibold text-base leading-none text-foreground whitespace-nowrap tabular-nums">
+                              ₹{expense.amount.toFixed(0)}
+                            </p>
                           </div>
-                        </div>
-                      </div>
 
-                      {/* Right: Amount & Actions */}
-                      <div className="flex items-center gap-2 ml-2 flex-shrink-0">
-                        <div className="text-right">
-                          <p className="text-base font-bold text-primary tabular-nums">₹{expense.amount.toFixed(0)}</p>
-                          <div className="flex items-center gap-1 justify-end mt-0.5">
-                            {expense.ai_confidence && expense.ai_confidence > 0.7 && (
-                              <Badge className="text-[9px] px-1 py-0 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                                AI
-                              </Badge>
-                            )}
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground truncate">
+                              <span className="truncate">{expense.category}</span>
+                              {expense.description !== (expense.merchant || expense.description) && (
+                                <>
+                                  <span className="w-0.5 h-0.5 rounded-full bg-muted-foreground/50" />
+                                  <span className="truncate max-w-[120px]">{expense.description}</span>
+                                </>
+                              )}
+                              {expense.ai_confidence && expense.ai_confidence > 0.8 && (
+                                <Zap className="w-3 h-3 text-amber-500 fill-amber-500/20" />
+                              )}
+                            </div>
+
+                            {/* Time or Payment Method (Secondary Meta) */}
                             {expense.payment_method && (
-                              <Badge variant="outline" className="text-[9px] px-1 py-0">
-                                <CreditCard className="w-2.5 h-2.5 mr-0.5" />
+                              <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wider font-medium">
                                 {expense.payment_method}
-                              </Badge>
+                              </span>
                             )}
                           </div>
                         </div>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
                       </div>
-                    </div>
-                  </Card>
-                ))}
+                    )
+                  })}
+                </div>
               </div>
-            </div>
-          )
-        })}
+            )
+          })}
+        </div>
       </div>
 
       {/* Expense Detail Drawer */}
