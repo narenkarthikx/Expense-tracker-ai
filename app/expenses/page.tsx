@@ -50,23 +50,7 @@ export default function ExpensesPage() {
         </div>
       </div>
 
-      {/* Add Expense Section */}
-      <Card className="p-6 bg-gradient-to-br from-primary/5 to-primary/0">
-        <h2 className="text-lg font-semibold mb-4">Add New Expense</h2>
-        <SimpleExpenseForm />
-      </Card>
 
-      {/* Divider */}
-      <div className="relative py-4">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-border"></div>
-        </div>
-        <div className="relative flex justify-center">
-          <span className="bg-background px-4 text-sm text-muted-foreground font-medium">
-            Your Expenses
-          </span>
-        </div>
-      </div>
 
       {/* Filters and List Section */}
       <div className="space-y-4">

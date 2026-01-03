@@ -2,18 +2,15 @@
 
 import { useEffect, useState } from "react"
 import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { createClient } from "@/lib/supabase-client"
-import { TrendingUp, Calendar, Brain, Receipt } from "lucide-react"
 
 interface ExpenseStats {
   today: number
   thisWeek: number
   thisMonth: number
-  aiProcessed: number
-  manualEntries: number
-  totalExpenses: number
-  topCategory: { name: string; amount: number } | null
+  lastExpense: { merchant: string; amount: number } | null
+  todayCount: number
+  weekCount: number
 }
 
 export default function ExpenseOverviewEnhanced() {
@@ -21,64 +18,54 @@ export default function ExpenseOverviewEnhanced() {
     today: 0,
     thisWeek: 0,
     thisMonth: 0,
-    aiProcessed: 0,
-    manualEntries: 0,
-    totalExpenses: 0,
-    topCategory: null
+    lastExpense: null,
+    todayCount: 0,
+    weekCount: 0
   })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetchStats()
+
+    // Listen for new expenses to update stats without reload
+    const handleNewExpense = () => {
+      fetchStats()
+    }
+    window.addEventListener('expense-added', handleNewExpense)
+    return () => window.removeEventListener('expense-added', handleNewExpense)
   }, [])
 
   const fetchStats = async () => {
     try {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
-      
       if (!user) return
 
-      const today = new Date().toISOString().split('T')[0]
+      const todayStr = new Date().toISOString().split('T')[0]
       const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
       const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
-      // Get all expenses
       const { data: expenses } = await supabase
         .from('expenses')
-        .select('amount, date, processing_status, category, extracted_data, ai_confidence')
+        .select('amount, date, merchant, description')
         .eq('user_id', user.id)
+        .order('date', { ascending: false })
 
       if (expenses) {
-        const todayExpenses = expenses.filter(e => e.date === today)
-        const weekExpenses = expenses.filter(e => e.date >= weekAgo)
-        const monthExpenses = expenses.filter(e => e.date >= monthAgo)
-        
-        const aiProcessed = expenses.filter(e => 
-          (e.processing_status === 'completed' && e.extracted_data) || 
-          (e.ai_confidence && e.ai_confidence > 0.5)
-        ).length
-        
-        const manual = expenses.length - aiProcessed
-
-        // Calculate top category
-        const categoryTotals: { [key: string]: number } = {}
-        expenses.forEach(expense => {
-          const category = expense.category || 'Other'
-          categoryTotals[category] = (categoryTotals[category] || 0) + expense.amount
-        })
-        
-        const topCategory = Object.entries(categoryTotals).reduce((max, [cat, amount]) => 
-          amount > (max?.amount || 0) ? { name: cat, amount } : max, null as { name: string; amount: number } | null)
+        const todayExp = expenses.filter(e => e.date === todayStr)
+        const weekExp = expenses.filter(e => e.date >= weekAgo)
+        const monthExp = expenses.filter(e => e.date >= monthAgo)
 
         setStats({
-          today: todayExpenses.reduce((sum, e) => sum + e.amount, 0),
-          thisWeek: weekExpenses.reduce((sum, e) => sum + e.amount, 0),
-          thisMonth: monthExpenses.reduce((sum, e) => sum + e.amount, 0),
-          aiProcessed,
-          manualEntries: manual,
-          totalExpenses: expenses.length,
-          topCategory
+          today: todayExp.reduce((sum, e) => sum + e.amount, 0),
+          thisWeek: weekExp.reduce((sum, e) => sum + e.amount, 0),
+          thisMonth: monthExp.reduce((sum, e) => sum + e.amount, 0),
+          lastExpense: expenses.length > 0 ? {
+            merchant: expenses[0].merchant || expenses[0].description,
+            amount: expenses[0].amount
+          } : null,
+          todayCount: todayExp.length,
+          weekCount: weekExp.length
         })
       }
     } catch (error) {
@@ -90,100 +77,57 @@ export default function ExpenseOverviewEnhanced() {
 
   if (loading) {
     return (
-      <Card className="p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-4 bg-muted rounded w-1/4"></div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="h-16 bg-muted rounded"></div>
-            <div className="h-16 bg-muted rounded"></div>
-          </div>
+      <Card className="p-5 border-none shadow-none bg-transparent">
+        <div className="flex gap-4 animate-pulse">
+          <div className="h-20 w-1/3 bg-muted rounded-xl"></div>
+          <div className="h-20 w-1/3 bg-muted rounded-xl"></div>
+          <div className="h-20 w-1/3 bg-muted rounded-xl"></div>
         </div>
       </Card>
     )
   }
 
+  // Logic for the single contextual status line
+  const getContextStatus = () => {
+    if (stats.todayCount === 0) return "No expenses added today"
+    if (stats.lastExpense) return `Last expense: ${stats.lastExpense.merchant} ₹${stats.lastExpense.amount.toFixed(0)}`
+    if (stats.weekCount > 0) return `You added ${stats.weekCount} expenses this week`
+    return "Track your spending effortlessly"
+  }
+
   return (
-    <Card className="p-5">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-semibold">Smart Expense Overview</h3>
-        <Badge variant="secondary" className="bg-gradient-to-r from-blue-500 to-purple-500 text-white">
-          AI Enhanced
-        </Badge>
+    <div className="space-y-4">
+      {/* 3-Column Stats Grid */}
+      <div className="grid grid-cols-3 gap-3">
+        {/* Today - Emphasized */}
+        <Card className="p-4 flex flex-col justify-center border-primary/20 bg-primary/5 shadow-none">
+          <span className="text-xs font-semibold text-primary/80 uppercase tracking-wide mb-1">Today</span>
+          <span className="text-2xl font-bold text-primary tracking-tight">
+            ₹{stats.today.toLocaleString('en-IN')}
+          </span>
+        </Card>
+
+        {/* This Week */}
+        <Card className="p-4 flex flex-col justify-center shadow-sm hover:bg-muted/30 transition-colors">
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">This Week</span>
+          <span className="text-xl font-semibold text-foreground tracking-tight">
+            ₹{stats.thisWeek.toLocaleString('en-IN')}
+          </span>
+        </Card>
+
+        {/* This Month */}
+        <Card className="p-4 flex flex-col justify-center shadow-sm hover:bg-muted/30 transition-colors">
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">This Month</span>
+          <span className="text-xl font-semibold text-foreground tracking-tight">
+            ₹{stats.thisMonth.toLocaleString('en-IN')}
+          </span>
+        </Card>
       </div>
 
-      <div className="space-y-4">
-        {/* Time-based stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <div className="text-center p-3 rounded-lg bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200">
-            <div className="text-xs sm:text-sm text-green-600 font-medium mb-1">Today</div>
-            <div className="text-lg sm:text-xl font-bold text-green-700 break-all">₹{stats.today.toFixed(0)}</div>
-          </div>
-          <div className="text-center p-3 rounded-lg bg-gradient-to-br from-blue-50 to-sky-50 border border-blue-200">
-            <div className="text-xs sm:text-sm text-blue-600 font-medium mb-1">This Week</div>
-            <div className="text-lg sm:text-xl font-bold text-blue-700 break-all">₹{stats.thisWeek.toFixed(0)}</div>
-          </div>
-          <div className="text-center p-3 rounded-lg bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200">
-            <div className="text-xs sm:text-sm text-purple-600 font-medium mb-1">This Month</div>
-            <div className="text-lg sm:text-xl font-bold text-purple-700 break-all">₹{stats.thisMonth.toFixed(0)}</div>
-          </div>
-        </div>
-
-        {/* AI vs Manual tracking */}
-        <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-lg p-2">
-          <div className="flex items-center gap-1 mb-1.5">
-            <Brain className="w-3 h-3 text-orange-600" />
-            <span className="text-xs font-medium text-orange-800">AI Stats</span>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-orange-700 text-xs">📸 AI:</span>
-              <Badge variant="secondary" className="bg-orange-100 text-orange-800 text-xs h-5">
-                {stats.aiProcessed}
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-orange-700 text-xs">✏️ Manual:</span>
-              <Badge variant="secondary" className="bg-orange-100 text-orange-800 text-xs h-5">
-                {stats.manualEntries}
-              </Badge>
-            </div>
-          </div>
-          {stats.aiProcessed > 0 && (
-            <div className="mt-1 text-xs text-orange-600">
-              {Math.round((stats.aiProcessed / stats.totalExpenses) * 100)}% auto-categorized
-            </div>
-          )}
-        </div>
-
-        {/* Top category */}
-        {stats.topCategory && (
-          <div className="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-lg p-2">
-            <div className="flex items-center gap-1 mb-1">
-              <TrendingUp className="w-3 h-3 text-indigo-600" />
-              <span className="text-xs font-medium text-indigo-800">Top Category</span>
-            </div>
-            <div className="flex items-center justify-between flex-wrap gap-1">
-              <span className="text-indigo-700 font-medium text-xs">{stats.topCategory.name}</span>
-              <Badge className="bg-indigo-100 text-indigo-800 text-xs h-5">
-                ₹{stats.topCategory.amount.toFixed(0)}
-              </Badge>
-            </div>
-          </div>
-        )}
-
-        {/* Quick tip about AI features */}
-        <div className="bg-gradient-to-r from-teal-50 to-cyan-50 border border-teal-200 rounded-lg p-2">
-          <div className="flex items-start gap-1">
-            <Receipt className="w-3 h-3 text-teal-600 mt-0.5 flex-shrink-0" />
-            <div className="text-xs">
-              <div className="font-medium text-teal-800">💡 Tip</div>
-              <div className="text-teal-700 text-xs leading-tight">
-                Upload receipts for auto-categorization!
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Dynamic Contextual Status Line */}
+      <div className="flex items-center justify-center text-xs text-muted-foreground font-medium py-1">
+        {getContextStatus()}
       </div>
-    </Card>
+    </div>
   )
 }
