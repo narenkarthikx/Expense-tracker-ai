@@ -69,8 +69,8 @@ export default function HomePage() {
       <nav className="sticky top-0 z-50 w-full border-b border-white/5 bg-background/60 backdrop-blur-xl">
         <div className="container mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-gradient-to-br from-primary to-purple-600 rounded-xl shadow-lg shadow-primary/20">
-              <Landmark className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-primary/20">
+              <img src="/icon-512x512.png" alt="Mexo Logo" className="w-full h-full object-cover" />
             </div>
             <span className="font-bold text-xl tracking-tight">Mexo</span>
           </div>
@@ -154,8 +154,8 @@ export default function HomePage() {
             <Card className="relative w-full max-w-md mx-auto p-1 rounded-3xl bg-gradient-to-br from-white/20 to-white/5 border border-white/20 shadow-2xl backdrop-blur-xl">
               <div className="bg-background/90 rounded-[22px] p-8 h-full">
                 <div className="text-center mb-8">
-                  <div className="inline-flex justify-center items-center w-12 h-12 bg-primary/10 rounded-2xl mb-4 text-primary">
-                    {isSignup ? <ScanLine className="w-6 h-6" /> : <Landmark className="w-6 h-6" />}
+                  <div className="inline-flex justify-center items-center w-16 h-16 rounded-2xl mb-4 overflow-hidden shadow-lg shadow-primary/20">
+                    <img src="/icon-512x512.png" alt="Mexo Logo" className="w-full h-full object-cover" />
                   </div>
                   <h3 className="text-2xl font-bold tracking-tight">
                     {isSignup ? "Create Account" : "Welcome Back"}
