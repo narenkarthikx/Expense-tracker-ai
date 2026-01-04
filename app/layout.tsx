@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   description: "AI-powered expense tracker with receipt scanning, budget management, and financial analytics",
   manifest: "/manifest.json",
   icons: {
-    icon: "/icon-512x512.png",
+    icon: "/favicon.png",
     apple: "/icon-512x512.png",
     shortcut: "/icon-512x512.png",
   },
