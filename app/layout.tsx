@@ -12,10 +12,15 @@ export const metadata: Metadata = {
   title: "Mexo",
   description: "AI-powered expense tracker with receipt scanning, budget management, and financial analytics",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/icon-512x512.png",
+    apple: "/icon-512x512.png",
+    shortcut: "/icon-512x512.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Mexo-My Expenses Optimized",
+    title: "Mexo",
   },
   formatDetection: {
     telephone: false,

@@ -53,7 +53,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 1. Create a new Supabase project at [supabase.com](https://supabase.com)
 2. Go to the SQL Editor in your Supabase dashboard
-3. Copy the contents of `/database/complete-database-setup.sql`
+3. Copy the contents of `/database/setup.sql`
 4. Paste and run the script in the SQL Editor
 5. Verify tables are created successfully
 
@@ -109,23 +109,25 @@ pnpm format
 
 ```
 expense-tracker-pwa/
-├── app/                    # Next.js 14 App Router
+├── app/                    # Next.js 15 App Router
 │   ├── api/               # API routes
 │   ├── dashboard/         # Dashboard pages
 │   ├── expenses/          # Expense management
-│   └── globals.css        # Global styles
+│   ├── budget/            # Budget planner
+│   ├── needs/             # Shopping list
+│   └── settings/          # User settings
 ├── components/            # React components
 │   ├── ui/               # Reusable UI components
 │   ├── auth/             # Authentication components
 │   ├── dashboard/        # Dashboard-specific components
-│   └── expenses/         # Expense-related components
+│   ├── expenses/         # Expense-related components
+│   └── budget/           # Budget components
 ├── lib/                   # Utility libraries
 │   ├── supabase-client.ts # Supabase client configuration
 │   └── utils.ts          # General utilities
-├── database/             # Database setup and migrations
+├── database/             # Database setup
 ├── docs/                 # Documentation
-├── public/               # Static assets
-└── styles/               # Additional styles
+└── public/               # Static assets
 ```
 
 ## 🔐 Authentication Setup

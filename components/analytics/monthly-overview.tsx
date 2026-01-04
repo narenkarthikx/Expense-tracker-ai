@@ -70,14 +70,25 @@ export default function MonthlyOverview({ dateRange }: MonthlyOverviewProps) {
   const percentageChange = lastPeriodSpent > 0 ? (diff / lastPeriodSpent) * 100 : 0
   const isHigher = diff > 0
 
-  // Calculate Budget Health for SELECTED Period
-  const budgetRemaining = budgetLimit - totalSpent
+  // Calculate Pro-rated Budget
+  const msPerDay = 1000 * 60 * 60 * 24
+  const daysInPeriod = Math.max(1, Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / msPerDay))
+
+  // Logic: Scale the annual/monthly budget to the selected period
+  // We assume the 'budgets' table stores MONTHLY limits.
+  const proRatedBudget = (budgetLimit / 30) * daysInPeriod
+
+  // Decide what label to show
+  const isMonthly = daysInPeriod >= 28 && daysInPeriod <= 31
+  const budgetLabel = isMonthly ? "Monthly Budget" : `Est. Budget (${daysInPeriod} days)`
+
+  const budgetRemaining = proRatedBudget - totalSpent
   const isBudgetSet = budgetLimit > 0
 
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-semibold tracking-tight">
-        Overview: {format(dateRange.from, "MMM yyyy")}
+        Overview
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -92,52 +103,51 @@ export default function MonthlyOverview({ dateRange }: MonthlyOverviewProps) {
             {Math.abs(diff) > 0 ? (
               <>
                 {isHigher ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
-                {Math.abs(percentageChange).toFixed(0)}% {isHigher ? "higher" : "lower"} than previous month
+                {Math.abs(percentageChange).toFixed(0)}% {isHigher ? "higher" : "lower"} than last period
               </>
             ) : (
-              <span className="text-muted-foreground">Same as previous month</span>
+              <span className="text-muted-foreground">Same as last period</span>
             )}
           </div>
         </Card>
 
-        {/* Card 2: Budget Status */}
+        {/* Card 2: Daily Average */}
         <Card className="p-6">
-          <p className="text-sm font-medium text-muted-foreground mb-1">Budget Status (Selected Month)</p>
+          <p className="text-sm font-medium text-muted-foreground mb-1">Daily Average</p>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold">
+              ₹{(totalSpent / daysInPeriod).toFixed(0)}
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground mt-3">
+            Average spent per day in this period
+          </p>
+        </Card>
+
+        {/* Card 3: Budget Status */}
+        <Card className="p-6">
+          <p className="text-sm font-medium text-muted-foreground mb-1">Budget Status</p>
 
           {isBudgetSet ? (
             <>
               <div className="flex items-baseline gap-2">
                 <span className={`text-3xl font-bold ${budgetRemaining < 0 ? "text-destructive" : "text-primary"}`}>
-                  {budgetRemaining < 0 ? "-" : ""}₹{Math.abs(budgetRemaining).toLocaleString()}
+                  {budgetRemaining < 0 ? "-" : ""}₹{Math.abs(budgetRemaining).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 </span>
-                <span className="text-sm text-muted-foreground">remaining of ₹{budgetLimit.toLocaleString()}</span>
+                <span className="text-sm text-muted-foreground">left</span>
               </div>
               <p className="text-sm text-muted-foreground mt-3">
-                {budgetRemaining >= 0 ? "You stayed within budget this month." : "You exceeded the budget for this month."}
+                of ₹{proRatedBudget.toLocaleString(undefined, { maximumFractionDigits: 0 })} ({budgetLabel})
               </p>
             </>
           ) : (
             <div className="flex flex-col h-full justify-center">
-              <span className="text-2xl font-bold text-muted-foreground">No Budget Set</span>
-              <p className="text-sm text-muted-foreground mt-1">
-                Configure budgets in Planning to track this.
+              <span className="text-xl font-bold text-muted-foreground">No Budget Set</span>
+              <p className="text-xs text-muted-foreground mt-1">
+                Budgets utilize your current settings.
               </p>
             </div>
           )}
-        </Card>
-
-        {/* Card 3: Insight */}
-        <Card className="p-6 bg-muted/20 border-primary/10 flex flex-col justify-center">
-          <div className="flex items-center gap-2 mb-2">
-            <Wallet className="w-4 h-4 text-primary" />
-            <span className="text-sm font-semibold text-primary">Key Insight</span>
-          </div>
-          <p className="text-sm text-foreground/90 leading-relaxed">
-            {totalSpent > lastPeriodSpent
-              ? `Spending increased by ₹${Math.abs(diff).toLocaleString()} compared to previous month.`
-              : `You saved ₹${Math.abs(diff).toLocaleString()} compared to previous month.`
-            }
-          </p>
         </Card>
       </div>
     </div>

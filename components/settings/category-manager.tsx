@@ -62,9 +62,9 @@ export function CategoryManager() {
 
       const { error } = await supabase
         .from('user_categories')
-        .upsert({ 
-          user_id: user.id, 
-          categories: updatedCategories 
+        .upsert({
+          user_id: user.id,
+          categories: updatedCategories
         })
 
       if (error) throw error
@@ -88,7 +88,7 @@ export function CategoryManager() {
       toast.error("Category already exists")
       return
     }
-    
+
     const updated = [...categories, trimmed]
     setCategories(updated)
     saveCategoriesToDB(updated)
@@ -118,7 +118,7 @@ export function CategoryManager() {
       toast.error("Category already exists")
       return
     }
-    
+
     const updated = [...categories]
     updated[index] = trimmed
     setCategories(updated)
@@ -147,8 +147,8 @@ export function CategoryManager() {
           disabled={loading}
           className="flex-1"
         />
-        <Button 
-          onClick={handleAddCategory} 
+        <Button
+          onClick={handleAddCategory}
           disabled={loading || !newCategory.trim()}
           className="whitespace-nowrap"
         >
@@ -193,13 +193,15 @@ export function CategoryManager() {
                     <span>{category}</span>
                     <button
                       onClick={() => startEditing(index)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-blue-600"
+                      className="text-muted-foreground hover:text-blue-600 transition-colors"
+                      title="Edit Category"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => handleDeleteCategory(index)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-destructive"
+                      className="text-muted-foreground hover:text-destructive transition-colors"
+                      title="Delete Category"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -212,8 +214,8 @@ export function CategoryManager() {
       </Card>
 
       <div className="flex justify-end">
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           size="sm"
           onClick={handleResetToDefault}
           disabled={saving}

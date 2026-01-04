@@ -108,10 +108,13 @@ export default function SpendingTrends({ dateRange }: SpendingTrendsProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Main Comparison */}
-        <div className="p-5 rounded-xl bg-muted/30 border border-primary/5">
+        <div className="p-5 rounded-xl bg-muted/30 border border-primary/5 col-span-2 md:col-span-1">
           <p className="text-sm font-medium text-muted-foreground mb-1 capitalize">Total Spent (Selected Period)</p>
-          <div className="flex items-baseline gap-2">
+          <div className="flex items-baseline gap-4 mb-1">
             <span className="text-3xl font-bold">₹{data.current.toLocaleString()}</span>
+            <span className="text-sm text-muted-foreground font-medium">
+              (Avg: ₹{data.average.toFixed(0)} / day)
+            </span>
           </div>
 
           <div className="flex items-center gap-2 mt-4">
@@ -121,16 +124,6 @@ export default function SpendingTrends({ dateRange }: SpendingTrendsProps) {
             </span>
             <span className="text-muted-foreground text-sm">than previous period</span>
           </div>
-        </div>
-
-        {/* Average */}
-        <div className="p-5 rounded-xl bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/20">
-          <div className="flex items-center gap-2 mb-2">
-            <IndianRupee className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            <span className="text-sm font-medium text-blue-900 dark:text-blue-300">Daily Average</span>
-          </div>
-          <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">₹{data.average.toFixed(0)}</p>
-          <p className="text-xs text-blue-600/70 dark:text-blue-400/70 mt-1">Average spent per day in this period</p>
         </div>
       </div>
     </Card>

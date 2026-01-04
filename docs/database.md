@@ -15,7 +15,7 @@ The application uses PostgreSQL with the following main tables:
 
 ### Option 1: Automated Setup (Recommended)
 1. Open your Supabase SQL editor
-2. Copy and paste the entire content of `/database/complete-database-setup.sql`
+2. Copy and paste the entire content of `/database/setup.sql`
 3. Run the script - it will create all tables, indexes, functions, and test data
 
 ### Option 2: Manual Setup
